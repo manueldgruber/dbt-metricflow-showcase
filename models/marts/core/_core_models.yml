@@ -1,0 +1,91 @@
+version: 2
+
+models:
+  - name: metricflow_time_spine
+    description: Date spine required by MetricFlow for time-series metric calculations
+    time_spine:
+      standard_granularity_column: date_day
+    columns:
+      - name: date_day
+        description: One row per calendar day from 2017 to 2030
+        granularity: day
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_customers
+    description: >
+      One record per customer, enriched with order history metrics and
+      segmentation. This is the primary customer dimension.
+    columns:
+      - name: customer_id
+        description: Primary key
+        tests:
+          - unique
+          - not_null
+      - name: first_name
+        tests:
+          - not_null
+      - name: last_name
+        tests:
+          - not_null
+      - name: full_name
+        description: Concatenated first and last name
+      - name: number_of_orders
+        description: Total number of orders placed by this customer
+      - name: lifetime_value
+        description: Total amount across all orders (in dollars)
+      - name: completed_order_value
+        description: Total amount from completed orders only (in dollars)
+      - name: number_of_returns
+        description: Count of orders with status=returned
+      - name: number_of_pending_returns
+        description: Count of orders with status=return_pending
+      - name: first_order_date
+        description: Date of the customer's first order
+      - name: most_recent_order_date
+        description: Date of the customer's most recent order
+      - name: customer_segment
+        description: Segment based on order count (no_orders, new, regular, vip)
+        tests:
+          - accepted_values:
+              values: ['no_orders', 'new', 'regular', 'vip']
+
+  - name: fct_orders
+    description: >
+      One record per order, with payment method breakdown and boolean
+      convenience flags. Grain is one row per order_id.
+    columns:
+      - name: order_id
+        description: Primary key
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_customers')
+              field: customer_id
+      - name: order_date
+        tests:
+          - not_null
+      - name: status
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['placed', 'shipped', 'completed', 'return_pending', 'returned']
+      - name: amount
+        description: Total order amount in dollars
+      - name: credit_card_amount
+        description: Portion paid by credit card
+      - name: coupon_amount
+        description: Portion paid by coupon
+      - name: bank_transfer_amount
+        description: Portion paid by bank transfer
+      - name: gift_card_amount
+        description: Portion paid by gift card
+      - name: is_completed
+        description: True if status = completed
+      - name: is_returned
+        description: True if status is returned or return_pending

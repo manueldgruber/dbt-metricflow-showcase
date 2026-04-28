@@ -1,0 +1,58 @@
+version: 2
+
+semantic_models:
+  - name: payments
+    description: Payments semantic model — grain is one row per payment
+    model: ref('fct_payments')
+
+    defaults:
+      agg_time_dimension: order_date
+
+    entities:
+      - name: payment
+        type: primary
+        expr: payment_id
+      - name: order
+        type: foreign
+        expr: order_id
+      - name: customer
+        type: foreign
+        expr: customer_id
+
+    dimensions:
+      - name: order_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: payment_method
+        type: categorical
+      - name: order_status
+        type: categorical
+
+    measures:
+      - name: payment_count
+        description: Count of payments
+        agg: count
+        expr: payment_id
+
+      - name: payment_amount
+        description: Total payment amount in dollars
+        agg: sum
+        expr: amount
+
+
+metrics:
+  - name: total_payments
+    label: Total Payments
+    description: Total number of payment transactions
+    type: simple
+    type_params:
+      measure: payment_count
+
+  - name: total_payment_volume
+    label: Total Payment Volume
+    description: Total dollar volume of all payments
+    type: simple
+    type_params:
+      measure: payment_amount
+

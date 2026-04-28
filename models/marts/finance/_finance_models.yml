@@ -1,0 +1,60 @@
+version: 2
+
+models:
+  - name: fct_payments
+    description: >
+      One record per payment, joined with order and customer context.
+      Grain is one row per payment_id.
+    columns:
+      - name: payment_id
+        description: Primary key
+        tests:
+          - unique
+          - not_null
+      - name: order_id
+        tests:
+          - not_null
+      - name: customer_id
+        tests:
+          - not_null
+      - name: order_date
+        tests:
+          - not_null
+      - name: order_status
+        tests:
+          - accepted_values:
+              values: ['placed', 'shipped', 'completed', 'return_pending', 'returned']
+      - name: payment_method
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['credit_card', 'coupon', 'bank_transfer', 'gift_card']
+      - name: amount
+        description: Payment amount in dollars
+        tests:
+          - not_null
+
+  - name: fct_mrr
+    description: >
+      Monthly revenue aggregation. One row per calendar month.
+      Useful for finance reporting and trend analysis.
+    columns:
+      - name: revenue_month
+        description: First day of the month (date_trunc to month)
+        tests:
+          - unique
+          - not_null
+      - name: orders_count
+        description: Number of distinct orders in the month
+      - name: customers_count
+        description: Number of distinct customers who ordered in the month
+      - name: gross_revenue
+        description: Total revenue across all order statuses
+      - name: net_revenue
+        description: Revenue from completed orders only
+      - name: returned_revenue
+        description: Revenue from returned orders
+      - name: credit_card_revenue
+      - name: coupon_revenue
+      - name: bank_transfer_revenue
+      - name: gift_card_revenue

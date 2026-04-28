@@ -1,0 +1,100 @@
+version: 2
+
+semantic_models:
+  - name: customers
+    description: Customers semantic model — grain is one row per customer
+    model: ref('dim_customers')
+
+    defaults:
+      agg_time_dimension: first_order_date
+
+    entities:
+      - name: customer
+        type: primary
+        expr: customer_id
+
+    dimensions:
+      - name: first_order_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: most_recent_order_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: customer_segment
+        type: categorical
+      - name: full_name
+        type: categorical
+
+    measures:
+      - name: customers
+        description: Count of customers
+        agg: count
+        expr: customer_id
+
+      - name: customers_with_any_order
+        description: Customers who have placed at least one order
+        agg: count
+        expr: "case when number_of_orders > 0 then customer_id end"
+
+      - name: total_lifetime_value
+        description: Sum of all customer lifetime values
+        agg: sum
+        expr: lifetime_value
+
+      - name: total_number_of_orders
+        description: Sum of orders across all customers
+        agg: sum
+        expr: number_of_orders
+
+      - name: total_returns
+        description: Total number of returned orders
+        agg: sum
+        expr: number_of_returns
+
+
+metrics:
+  - name: total_customers
+    label: Total Customers
+    description: Total number of customers in the system
+    type: simple
+    type_params:
+      measure: customers
+
+  - name: active_customers
+    label: Active Customers
+    description: Customers who have placed at least one order
+    type: simple
+    type_params:
+      measure: customers_with_any_order
+
+  - name: sum_lifetime_value
+    label: Sum of Lifetime Value
+    description: Total lifetime value across all customers
+    type: simple
+    type_params:
+      measure: total_lifetime_value
+
+  - name: sum_orders_across_customers
+    label: Sum of Orders Across Customers
+    description: Total number of orders summed across all customers
+    type: simple
+    type_params:
+      measure: total_number_of_orders
+
+  - name: average_lifetime_value
+    label: Average Lifetime Value
+    description: Average revenue per customer
+    type: ratio
+    type_params:
+      numerator: sum_lifetime_value
+      denominator: total_customers
+
+  - name: average_orders_per_customer
+    label: Average Orders Per Customer
+    description: Average number of orders per customer
+    type: ratio
+    type_params:
+      numerator: sum_orders_across_customers
+      denominator: total_customers

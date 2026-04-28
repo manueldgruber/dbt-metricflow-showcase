@@ -1,0 +1,133 @@
+version: 2
+
+semantic_models:
+  - name: orders
+    description: Orders semantic model — grain is one row per order
+    model: ref('fct_orders')
+
+    defaults:
+      agg_time_dimension: order_date
+
+    entities:
+      - name: order
+        type: primary
+        expr: order_id
+      - name: customer
+        type: foreign
+        expr: customer_id
+
+    dimensions:
+      - name: order_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: status
+        type: categorical
+      - name: is_completed
+        type: categorical
+      - name: is_returned
+        type: categorical
+
+    measures:
+      - name: orders
+        description: Count of orders
+        agg: count
+        expr: order_id
+
+      - name: revenue
+        description: Total order revenue in dollars
+        agg: sum
+        expr: amount
+
+      - name: completed_revenue
+        description: Revenue from completed orders only
+        agg: sum
+        expr: "case when is_completed then amount else 0 end"
+
+      - name: credit_card_revenue
+        description: Revenue paid by credit card
+        agg: sum
+        expr: credit_card_amount
+
+      - name: coupon_revenue
+        description: Revenue paid by coupon
+        agg: sum
+        expr: coupon_amount
+
+      - name: bank_transfer_revenue
+        description: Revenue paid by bank transfer
+        agg: sum
+        expr: bank_transfer_amount
+
+      - name: gift_card_revenue
+        description: Revenue paid by gift card
+        agg: sum
+        expr: gift_card_amount
+
+      - name: distinct_customers_with_orders
+        description: Number of customers who placed at least one order
+        agg: count_distinct
+        expr: customer_id
+
+
+metrics:
+  - name: total_orders
+    label: Total Orders
+    description: Total number of orders placed
+    type: simple
+    type_params:
+      measure: orders
+
+  - name: total_revenue
+    label: Total Revenue
+    description: Total gross revenue across all orders
+    type: simple
+    type_params:
+      measure: revenue
+
+  - name: completed_revenue
+    label: Completed Revenue
+    description: Revenue from completed orders only
+    type: simple
+    type_params:
+      measure: completed_revenue
+
+  - name: customers_with_orders
+    label: Customers With Orders
+    description: Distinct customers who have placed an order
+    type: simple
+    type_params:
+      measure: distinct_customers_with_orders
+
+  - name: average_order_value
+    label: Average Order Value
+    description: Average revenue per order
+    type: ratio
+    type_params:
+      numerator: total_revenue
+      denominator: total_orders
+
+
+  - name: revenue_last_28d
+    label: Revenue (Last 28 Days)
+    description: Rolling 28-day revenue
+    type: cumulative
+    type_params:
+      measure: revenue
+      cumulative_type_params:
+        window: 28 days
+
+  - name: cumulative_revenue
+    label: Cumulative Revenue
+    description: All-time cumulative revenue
+    type: cumulative
+    type_params:
+      measure: revenue
+
+  - name: revenue_per_completed_order
+    label: Revenue Per Completed Order
+    description: Average revenue considering only completed orders
+    type: ratio
+    type_params:
+      numerator: completed_revenue
+      denominator: total_orders
