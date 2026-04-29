@@ -83,6 +83,73 @@ Each semantic model declares:
 
 ---
 
+## Exploring the semantic layer
+
+MetricFlow ships with a set of `list` and `explain` sub-commands that let you inspect every object in the semantic layer without writing SQL or opening a BI tool.
+
+### List commands
+
+```bash
+# All 17 metrics across the three semantic models
+mf list metrics
+
+# Filter metrics by name — matches total_revenue, completed_revenue, cumulative_revenue, etc.
+mf list metrics --search revenue
+
+# All queryable dimensions across every semantic model
+mf list dimensions
+
+# Dimensions available for total_revenue (orders model + joined customer dims)
+mf list dimensions --metrics total_revenue
+# → metric_time, order__order_date, order__status, order__is_completed,
+#   order__is_returned, customer__customer_segment, customer__full_name, …
+
+# Dimensions shared across total_revenue + total_payment_volume
+# (only dims reachable from both metrics are returned)
+mf list dimensions --metrics total_revenue,total_payment_volume
+
+# All entities MetricFlow knows about
+mf list entities
+# → order, customer, payment
+
+# Entities available when querying active_customers
+mf list entities --metrics active_customers
+# → customer
+
+# All three semantic models
+mf list semantic-models
+# → orders, customers, payments
+```
+
+### Explain: see the generated SQL before running it
+
+```bash
+# Cross-model query: revenue + AOV broken down by customer segment
+# MetricFlow joins orders → customers via the customer entity
+mf explain \
+  --metrics total_revenue,average_order_value \
+  --group-by customer__customer_segment,metric_time__month
+
+# Cumulative metric — inspect the window frame SQL
+mf explain \
+  --metrics revenue_last_28d \
+  --group-by metric_time__day
+
+# Ratio metric — see how numerator/denominator subqueries are assembled
+mf explain \
+  --metrics average_lifetime_value \
+  --group-by customer__customer_segment
+
+# Payment method breakdown — payments model dimensions
+mf explain \
+  --metrics total_payment_volume,total_payments \
+  --group-by payment__payment_method,metric_time__month
+```
+
+`mf explain` is the fastest way to audit what SQL the semantic layer produces — useful when onboarding a new metric or debugging unexpected results.
+
+---
+
 ## Querying metrics with MetricFlow
 
 The `mf` CLI (installed with `dbt-metricflow`) lets you query any metric without writing SQL.
