@@ -108,17 +108,13 @@ mf list dimensions --metrics total_revenue
 # (only dims reachable from both metrics are returned)
 mf list dimensions --metrics total_revenue,total_payment_volume
 
-# All entities MetricFlow knows about
-mf list entities
+# All entities MetricFlow knows about (--metrics required)
+mf list entities --metrics total_orders,total_customers,total_payments
 # → order, customer, payment
 
 # Entities available when querying active_customers
 mf list entities --metrics active_customers
 # → customer
-
-# All three semantic models
-mf list semantic-models
-# → orders, customers, payments
 ```
 
 ### Explain: see the generated SQL before running it
@@ -126,27 +122,27 @@ mf list semantic-models
 ```bash
 # Cross-model query: revenue + AOV broken down by customer segment
 # MetricFlow joins orders → customers via the customer entity
-mf explain \
+mf query --explain \
   --metrics total_revenue,average_order_value \
   --group-by customer__customer_segment,metric_time__month
 
 # Cumulative metric — inspect the window frame SQL
-mf explain \
+mf query --explain \
   --metrics revenue_last_28d \
   --group-by metric_time__day
 
 # Ratio metric — see how numerator/denominator subqueries are assembled
-mf explain \
+mf query --explain \
   --metrics average_lifetime_value \
   --group-by customer__customer_segment
 
 # Payment method breakdown — payments model dimensions
-mf explain \
+mf query --explain \
   --metrics total_payment_volume,total_payments \
   --group-by payment__payment_method,metric_time__month
 ```
 
-`mf explain` is the fastest way to audit what SQL the semantic layer produces — useful when onboarding a new metric or debugging unexpected results.
+`mf query --explain` is the fastest way to audit what SQL the semantic layer produces — useful when onboarding a new metric or debugging unexpected results.
 
 ---
 
